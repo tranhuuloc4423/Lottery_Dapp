@@ -21,9 +21,9 @@ export const AppProvider = ({ children }) => {
     const [masterAddress, setMasterAddress] = useState();
     const [initialized, setInitialized] = useState(false);
     const [lotteryId, setLotteryId] = useState();
-    const [lotteryPot, setLotteryPot] = useState();
-    const [Lottery, setLottery] = useState();
-    const [LotteryAddress, setLotteryAddress] = useState();
+    const [lotteryPot, setLotteryPot] = useState(0);
+    const [lottery, setLottery] = useState();
+    const [lotteryAddress, setLotteryAddress] = useState();
     // get provider
     const { connection } = useConnection();
     const wallet = useAnchorWallet();
@@ -38,6 +38,10 @@ export const AppProvider = ({ children }) => {
     useEffect(() => {
         updateState();
     }, [program]);
+
+    useEffect(() => {
+        updateState();
+    }, []);
 
     const updateState = async () => {
         if (!program) return;
@@ -55,8 +59,30 @@ export const AppProvider = ({ children }) => {
             setLotteryId(master.LastId);
             const LotteryAddress = await getLotteryAddress(master.LastId);
             setLotteryAddress(LotteryAddress);
-            const Lottery = await program.account.Lottery.fetch(LotteryAddress);
-            setLottery(Lottery);
+            const lottery = await program.account.Lottery.fetch(LotteryAddress);
+            setLottery(lottery);
+            if(!wallet?.publicKey) return
+
+            const userTicket = await program.account.ticket.all(
+                [
+                    {
+                        memcmp: {
+                            bytes: bs58.encode(new BN(lotteryId).toArrayLike(Buffer, 'le', 4)),
+                            offset: 12
+                        }
+                    },
+                    {
+                        memcmp: { bytes: wallet.publicKey.toBase58(), offset: 16}
+                    }
+                ]
+            )
+
+            // check user wwinner
+
+            const userWin = userTicket.some(t => t.account.id === lottery.winnerId)
+
+
+
         } catch (error) {
             console.log(error.message);
         }
@@ -64,6 +90,7 @@ export const AppProvider = ({ children }) => {
 
     const getPot = async () => {
         const pot = getTotalPrize(lottery);
+        setLotteryPot(pot)
     };
 
     const initMaster = async () => {
@@ -107,6 +134,44 @@ export const AppProvider = ({ children }) => {
         }
     };
 
+    const buyTicket = async () => {
+        try {
+            const txHash = await program.methods
+            .buyTicket(lotteryId)
+            .accounts({
+                lottery: lotteryAddress,
+                ticket:  await getTicketAddress(lotteryAddress, lottery.LastId + 1),
+                buyer: wallet.publicKey,
+                systemProgram: SystemProgram.programId
+            })
+            .rpc();
+            await confirmTx(txHash, connection);
+            updateState();
+            toast.success("Bought a Ticket!");
+        } catch (error) {
+            console.log(error.message);
+            toast.error(error.message);
+        }
+    };
+
+    const pickWinner = async () => {
+        try {
+            const txHash = await program.methods
+            .pickWinner(lotteryId)
+            .accounts({
+                lottery: lotteryAddress,
+                authority: wallet.publicKey
+            })
+            .rpc();
+            await confirmTx(txHash, connection);
+            updateState();
+            toast.success("Pick a Winner!");
+        } catch (error) {
+            console.log(error.message);
+            toast.error(error.message);
+        }
+    };
+
     return (
         <AppContext.Provider
             value={{
@@ -114,8 +179,12 @@ export const AppProvider = ({ children }) => {
                 connected: wallet?.publicKey ? true : false,
                 isMasterInitialized: initialized,
                 lotteryId,
+                lotteryPot,
+                isLotteryAuthority: wallet && lottery && wallet.publicKey.equals(lottery.authority),
                 initMaster,
                 creatLottery,
+                buyTicket,
+                pickWinner
             }}
         >
             {children}

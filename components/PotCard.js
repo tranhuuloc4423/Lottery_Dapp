@@ -14,6 +14,9 @@ const PotCard = () => {
         initMaster,
         createLottery,
         lotteryId,
+        buyTicket,
+        isLotteryAuthority,
+        pickWinner
     } = useAppContext();
     console.log(connected, "connected");
     const lotteryPot = 1000;
@@ -29,27 +32,17 @@ const PotCard = () => {
 
     // Static States:
 
-    // Is Wallet connected?
-    const isLotteryAuthority = true;
-
     // Is there already a winner for the lottery?
     const [isFinished, setIsFinished] = useState(false);
     // If there is a winner can that winner claim the prize?
     const [canClaim, setCanClaim] = useState(false);
 
-    // Static Functions
-
-    const buyTicket = () => {
-        // buys a ticket for the current lottery displayed
-        console.log("Purchasing ticket for current lottery");
-    };
-
-    const pickWinner = () => {
-        setCanClaim(true);
-        console.log(
-            "Picking a winner and allowing that winner to claim the ticket"
-        );
-    };
+    // const pickWinner = () => {
+    //     setCanClaim(true);
+    //     console.log(
+    //         "Picking a winner and allowing that winner to claim the ticket"
+    //     );
+    // };
 
     const claimPrize = () => {
         setCanClaim(false);
