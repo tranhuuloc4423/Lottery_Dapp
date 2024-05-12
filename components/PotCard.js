@@ -46,7 +46,7 @@ const PotCard = ({ lottery }) => {
     return (
         <>
             {lottery && (
-                <div className={style.wrapper}>
+                <div className="wrapper">
                     <Toaster />
                     <div className={style.title}>
                         Lottery{" "}

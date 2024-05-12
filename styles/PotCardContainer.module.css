@@ -7,6 +7,9 @@
     gap: 4;
     justify-content: space-between;
     flex-wrap: wrap;
+    /* display: grid;
+    grid-row: auto;
+    grid-column: 4; */
 }
 
 .center {
