@@ -19,7 +19,11 @@
                 { "name": "authority", "isMut": true, "isSigner": true },
                 { "name": "systemProgram", "isMut": false, "isSigner": false }
             ],
-            "args": [{ "name": "ticketPrice", "type": "u64" }]
+            "args": [
+                { "name": "ticketPrice", "type": "u64" },
+                { "name": "endTime", "type": "i64" },
+                { "name": "pickWinnerTime", "type": "i64" }
+            ]
         },
         {
             "name": "buyTicket",
@@ -37,7 +41,10 @@
                 { "name": "lottery", "isMut": true, "isSigner": false },
                 { "name": "authority", "isMut": false, "isSigner": true }
             ],
-            "args": [{ "name": "lotteryId", "type": "u32" }]
+            "args": [
+                { "name": "lotteryId", "type": "u32" },
+                { "name": "winnerId", "type": "u32" }
+            ]
         },
         {
             "name": "claimPrize",
@@ -71,7 +78,9 @@
                     { "name": "ticketPrice", "type": "u64" },
                     { "name": "lastTicketId", "type": "u32" },
                     { "name": "winnerId", "type": { "option": "u32" } },
-                    { "name": "claimed", "type": "bool" }
+                    { "name": "claimed", "type": "bool" },
+                    { "name": "pickWinnerTime", "type": "i64" },
+                    { "name": "endTime", "type": "i64" }
                 ]
             }
         },
@@ -91,23 +100,28 @@
         {
             "code": 6000,
             "name": "WinnerAlreadyExists",
-            "msg": "Winner already exists."
+            "msg": "Winner already exists!"
         },
         {
             "code": 6001,
             "name": "NoTickets",
-            "msg": "Can't choose a winner when there are no tickets."
+            "msg": "Can't choose a winner when there are no tickets!"
         },
         {
             "code": 6002,
             "name": "WinnerNotChosen",
-            "msg": "Winner has not been chosen."
+            "msg": "Winner has not been chosen!"
         },
-        { "code": 6003, "name": "InvalidWinner", "msg": "Invalid winner." },
+        { "code": 6003, "name": "InvalidWinner", "msg": "Invalid winner!" },
         {
             "code": 6004,
             "name": "AlreadyClaimed",
-            "msg": "The prize has already been claimed."
+            "msg": "The prize has already been claimed!"
+        },
+        {
+            "code": 6005,
+            "name": "AlreadyClosed",
+            "msg": "The lottery has already been closed!"
         }
     ]
 }

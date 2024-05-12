@@ -3,95 +3,114 @@ import style from "../styles/PotCard.module.css";
 import { useAppContext } from "../context/context";
 import { shortenPk } from "../utils/helper";
 import { Toaster } from "react-hot-toast";
-// Temp imports
-import { PublicKey } from "@solana/web3.js";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useAnchorWallet } from "@solana/wallet-adapter-react";
+import { getTicketPrice, getTime, getTotalPrize } from "../utils/program";
 
-const PotCard = () => {
-    const {
-        connected,
-        isMasterInitialized,
-        isLotteryAuthority,
-        isFinished,
-        canClaim,
-        initMaster,
-        createLottery,
-        lotteryId,
-        buyTicket,
-        pickWinner,
-        lotteryHistory,
-        lotteryPot,
-    } = useAppContext();
+const PotCard = ({ lottery }) => {
+    const [lotteryPot, setLotteryPot] = useState(0);
+    const [ticketWinner, setTicketWinner] = useState(null);
+    const [canClaim, setCanClaim] = useState(false);
+    const wallet = useAnchorWallet();
+    // console.log(lottery);
 
-    const claimPrize = () => {
-        // setCanClaim(false);
-        console.log("You're the winner! Claiming your prize now...");
+    const { connected, buyTicket, pickWinner, claimPrize, getTicketWinner } =
+        useAppContext();
+
+    const isLotteryAuthority =
+        wallet &&
+        lottery &&
+        wallet.publicKey.equals(lottery?.account?.authority);
+
+    const isFinished = lottery && lottery.account.winnerId;
+
+    const getWinner = async () => {
+        const result = await getTicketWinner(lottery).then((winner) =>
+            setTicketWinner(winner)
+        );
+        return result;
     };
 
-    if (!isMasterInitialized)
-        return (
-            <div className={style.wrapper}>
-                <div className={style.title}>
-                    Lottery{" "}
-                    <span className={style.textAccent}>#{lotteryId}</span>
-                </div>
-                {connected ? (
-                    <>
-                        <div className={style.btn} onClick={initMaster}>
-                            Initialize master
-                        </div>
-                    </>
-                ) : (
-                    // Wallet multibutton goes here
-                    <WalletMultiButton />
-                )}
-            </div>
-        );
+    useEffect(() => {
+        if (!lottery) return;
+        getWinner();
+
+        const canClaim =
+            ticketWinner &&
+            lottery &&
+            wallet.publicKey.equals(ticketWinner.authority) &&
+            !lottery.account.claimed;
+        setCanClaim(canClaim);
+    }, [lottery]);
 
     return (
-        <div className={style.wrapper}>
-            <Toaster />
-            <div className={style.title}>
-                Lottery <span className={style.textAccent}>#{lotteryId}</span>
-            </div>
-            <div className={style.pot}>Pot 🍯: {lotteryPot} SOL</div>
-            <div className={style.recentWinnerTitle}>🏆Recent Winner🏆</div>
-            <div className={style.winner}>
-                {lotteryHistory?.length &&
-                    shortenPk(
-                        lotteryHistory[
-                            lotteryHistory.length - 1
-                        ].winnerAddress.toBase58()
-                    )}
-            </div>
-            {connected ? (
-                <>
-                    {!isFinished && (
-                        <div className={style.btn} onClick={buyTicket}>
-                            Enter
-                        </div>
-                    )}
-
-                    {isLotteryAuthority && !isFinished && (
-                        <div className={style.btn} onClick={pickWinner}>
-                            Pick Winner
-                        </div>
-                    )}
-
-                    {canClaim && (
-                        <div className={style.btn} onClick={claimPrize}>
-                            Claim prize
-                        </div>
-                    )}
-
-                    <div className={style.btn} onClick={createLottery}>
-                        Create lottery
+        <>
+            {lottery && (
+                <div className={style.wrapper}>
+                    <Toaster />
+                    <div className={style.title}>
+                        Lottery{" "}
+                        <span className={style.textAccent}>
+                            #{lottery?.account.id}
+                        </span>
                     </div>
-                </>
-            ) : (
-                <WalletMultiButton />
+                    <div className={style.pot}>
+                        Pot 🍯: {getTotalPrize(lottery.account)} SOL
+                    </div>
+                    <div className={style.pot}>
+                        Price Ticket: {getTicketPrice(lottery.account)} SOL
+                    </div>
+
+                    <div className={style.pot}>
+                        End Time: {getTime(lottery?.account.endTime)}
+                    </div>
+
+                    <div className={style.pot}>
+                        Pick Winner Time:{" "}
+                        {getTime(lottery.account.pickWinnerTime)}
+                    </div>
+                    <div className={style.recentWinnerTitle}>🏆Winner🏆</div>
+                    {ticketWinner && (
+                        <div className={style.winner}>
+                            {shortenPk(ticketWinner.authority, 5)}
+                        </div>
+                    )}
+                    {connected && (
+                        <>
+                            {!isFinished && (
+                                <div
+                                    className={style.btn}
+                                    onClick={() => buyTicket(lottery)}
+                                >
+                                    Enter
+                                </div>
+                            )}
+
+                            {isLotteryAuthority &&
+                                !lottery.account.winnerId && (
+                                    <div
+                                        className={style.btn}
+                                        onClick={() => pickWinner(lottery)}
+                                    >
+                                        Pick Winner
+                                    </div>
+                                )}
+
+                            {canClaim && (
+                                <div
+                                    className={style.btn}
+                                    onClick={() =>
+                                        claimPrize(lottery, ticketWinner?.id)
+                                    }
+                                >
+                                    Claim prize
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
             )}
-        </div>
+        </>
     );
 };
 

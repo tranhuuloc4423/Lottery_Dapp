@@ -11,6 +11,7 @@ import {
 import { PhantomWalletAdapter } from "@solana/wallet-adapter-wallets";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import { AppProvider } from "../context/context";
+import PotCardContainer from "../components/PotCardContainer";
 
 require("@solana/wallet-adapter-react-ui/styles.css");
 
@@ -25,8 +26,9 @@ export default function Home() {
                     <AppProvider>
                         <div className={style.wrapper}>
                             <Header />
-                            <PotCard />
-                            <Table />
+                            <PotCardContainer />
+                            {/* <PotCard /> */}
+                            {/* <Table /> */}
                         </div>
                     </AppProvider>
                 </WalletModalProvider>

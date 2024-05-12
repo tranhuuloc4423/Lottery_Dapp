@@ -3,7 +3,6 @@
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
 import style from "../styles/Header.module.css";
-import { useEffect, useState } from "react";
 
 const Header = () => {
     return (

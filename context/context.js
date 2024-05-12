@@ -21,9 +21,9 @@ export const AppProvider = ({ children }) => {
     const [masterAddress, setMasterAddress] = useState();
     const [initialized, setInitialized] = useState(false);
     const [lotteryId, setLotteryId] = useState();
-    const [lotteryPot, setLotteryPot] = useState(0);
-    const [lottery, setLottery] = useState();
-    const [lotteryAddress, setLotteryAddress] = useState();
+    // const [lottery, setLottery] = useState();
+    const [lotteries, setLotteries] = useState();
+    // const [lotteryAddress, setLotteryAddress] = useState();
     const [userWinnerId, setUserWinnerId] = useState(false);
     const [lotteryHistory, setLotteryHistory] = useState([]);
     // get provider
@@ -39,12 +39,6 @@ export const AppProvider = ({ children }) => {
         updateState();
     }, [program]);
 
-    useEffect(() => {
-        if (!lottery) return;
-        getPot();
-        getHistory();
-    }, [lottery]);
-
     const updateState = async () => {
         if (!program) return;
         try {
@@ -58,47 +52,21 @@ export const AppProvider = ({ children }) => {
             );
             setInitialized(true);
             setLotteryId(master.lastId);
-            const lotteryAddress = await getLotteryAddress(master.lastId);
-            setLotteryAddress(lotteryAddress);
-            const lottery = await program.account.lottery.fetch(lotteryAddress);
-            setLottery(lottery);
-            if (!wallet?.publicKey) return;
-            const userTicket = await program.account.ticket
-                .all
-                //     [
-                //     {
-                //         memcmp: {
-                //             bytes: bs58.encode(
-                //                 new BN(lotteryId).toArrayLike(Buffer, "le", 4)
-                //             ),
-                //             offset: 12,
-                //         },
-                //     },
-                //     {
-                //         memcmp: { bytes: wallet.publicKey.toBase58(), offset: 16 },
-                //     },
-                // ]
-                ();
+            // const lotteryAddress = await getLotteryAddress(master.lastId);
+            // setLotteryAddress(lotteryAddress);
+            // const lottery = await program.account.lottery.fetch(lotteryAddress);
+            // setLottery(lottery);
+            const lotteries = await program.account.lottery.all();
 
-            // check user wwinner
-
-            const userWin = userTicket.some(
-                (t) => t.account.id === lottery.winnerId
-            );
-
-            if (userWin) {
-                setUserWinnerId(lottery.winnerId);
-            } else {
-                setUserWinnerId(null);
-            }
+            setLotteries(lotteries);
         } catch (error) {
             console.log(error.message);
         }
     };
 
-    const getPot = async () => {
-        const pot = getTotalPrize(lottery);
-        setLotteryPot(pot);
+    const getPot = async (lottery) => {
+        const pot = getTotalPrize(lottery.account);
+        return pot;
     };
 
     const initMaster = async () => {
@@ -121,15 +89,16 @@ export const AppProvider = ({ children }) => {
         }
     };
 
-    const createLottery = async () => {
+    const createLottery = async (price, endTime, pickTime) => {
+        let realPrice = price * 1000000000;
         try {
             const LotteryAddress = await getLotteryAddress(lotteryId + 1);
-            console.log("LotteryAddress", LotteryAddress);
-            console.log("masterAddress", masterAddress);
-            console.log("authority", wallet.publicKey);
-            console.log("systemProgram", SystemProgram.programId);
             const txHash = await program.methods
-                .createLottery(new BN(5).mul(new BN(LAMPORT_PER_SOL)))
+                .createLottery(
+                    new BN(realPrice),
+                    new BN(endTime),
+                    new BN(pickTime)
+                )
                 .accounts({
                     lottery: LotteryAddress,
                     master: masterAddress,
@@ -137,7 +106,6 @@ export const AppProvider = ({ children }) => {
                     systemProgram: SystemProgram.programId,
                 })
                 .rpc();
-
             await confirmTx(txHash, connection);
             updateState();
             toast.success("Lottery Created!");
@@ -147,16 +115,44 @@ export const AppProvider = ({ children }) => {
         }
     };
 
-    const buyTicket = async () => {
-        console.log(lottery);
+    const getTicketWinner = async (lottery) => {
+        if (!wallet?.publicKey) return;
+
         try {
+            const lotteryAddress = await getLotteryAddress(lottery.account.id);
+            if (lottery.account.winnerId) {
+                const ticketAddresWin = await getTicketAddress(
+                    lotteryAddress,
+                    lottery.account.winnerId
+                );
+                const ticketWin = await program.account.ticket.fetch(
+                    ticketAddresWin
+                );
+                return ticketWin;
+            } else {
+                return null;
+            }
+        } catch (error) {
+            console.log(error.message);
+            toast.error(error.message);
+        }
+    };
+
+    const buyTicket = async (lottery) => {
+        try {
+            const lotteryId = lottery?.account?.id;
+            const lotteryAddress = await getLotteryAddress(lotteryId);
+            console.log({
+                lotteryId,
+                lotteryAddress,
+            });
             const txHash = await program.methods
                 .buyTicket(lotteryId)
                 .accounts({
                     lottery: lotteryAddress,
                     ticket: await getTicketAddress(
                         lotteryAddress,
-                        lottery.lastTicketId + 1
+                        lottery.account.lastTicketId + 1
                     ),
                     buyer: wallet.publicKey,
                     systemProgram: SystemProgram.programId,
@@ -171,10 +167,42 @@ export const AppProvider = ({ children }) => {
         }
     };
 
-    const pickWinner = async () => {
+    const claimPrize = async (lottery, ticketId) => {
         try {
+            const lotteryId = lottery?.account?.id;
+            const lotteryAddress = await getLotteryAddress(lotteryId);
+            console.log({
+                lotteryId,
+                lotteryAddress,
+            });
             const txHash = await program.methods
-                .pickWinner(lotteryId)
+                .claimPrize(lotteryId, ticketId)
+                .accounts({
+                    lottery: lotteryAddress,
+                    ticket: await getTicketAddress(lotteryAddress, ticketId),
+                    authority: wallet.publicKey,
+                    systemProgram: SystemProgram.programId,
+                })
+                .rpc();
+            await confirmTx(txHash, connection);
+            updateState();
+            toast.success("Claimed a Prize!");
+        } catch (error) {
+            console.log(error.message);
+            toast.error(error.message);
+        }
+    };
+
+    const pickWinner = async (lottery) => {
+        try {
+            const lotteryId = lottery?.account?.id;
+            const lotteryAddress = await getLotteryAddress(lotteryId);
+            const lotteryTicketLength = lottery.account.lastTicketId;
+            const randomWinner = Math.floor(
+                Math.random() * lotteryTicketLength + 1
+            );
+            const txHash = await program.methods
+                .pickWinner(lotteryId, randomWinner)
                 .accounts({
                     lottery: lotteryAddress,
                     authority: wallet.publicKey,
@@ -228,18 +256,21 @@ export const AppProvider = ({ children }) => {
                 connected: wallet?.publicKey ? true : false,
                 isMasterInitialized: initialized,
                 lotteryId,
-                lotteryPot,
-                isLotteryAuthority:
-                    wallet &&
-                    lottery &&
-                    wallet.publicKey.equals(lottery.authority),
-                isFinished: lottery && lottery.winnerId,
-                canClaim: lottery && !lottery.claimed && userWinnerId,
+                // isLotteryAuthority:
+                //     wallet &&
+                //     lottery &&
+                //     wallet.publicKey.equals(lottery.authority),
+                // isFinished: lottery && lottery.winnerId,
+                // canClaim: lottery && !lottery.claimed && userWinnerId,
                 lotteryHistory,
+                lotteries,
                 initMaster,
                 createLottery,
                 buyTicket,
                 pickWinner,
+                getPot,
+                getTicketWinner,
+                claimPrize,
             }}
         >
             {children}
