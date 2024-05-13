@@ -150,7 +150,7 @@ const PotCardContainer = () => {
                     </button>
                     <div className={style.container}>
                         {lotteries
-                            ?.sort((a, b) => a.account.id - b.account.id)
+                            ?.sort((a, b) => b.account.id - a.account.id)
                             ?.map((lottery) => (
                                 <PotCard
                                     key={lottery.account.id}
