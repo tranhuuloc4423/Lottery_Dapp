@@ -59,7 +59,7 @@ const PotCardContainer = () => {
             <div className={style.wrapper}>
                 {connected ? (
                     <>
-                        <div className={style.btn} onClick={initMaster}>
+                        <div className={style.button} onClick={initMaster}>
                             Initialize master
                         </div>
                     </>
@@ -149,12 +149,14 @@ const PotCardContainer = () => {
                         Lottery History
                     </button>
                     <div className={style.container}>
-                        {lotteries?.map((lottery) => (
-                            <PotCard
-                                key={lottery.account.id}
-                                lottery={lottery}
-                            />
-                        ))}
+                        {lotteries
+                            ?.sort((a, b) => a.account.id - b.account.id)
+                            ?.map((lottery) => (
+                                <PotCard
+                                    key={lottery.account.id}
+                                    lottery={lottery}
+                                />
+                            ))}
                     </div>
                 </div>
             ) : (

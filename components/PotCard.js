@@ -14,7 +14,7 @@ const PotCard = ({ lottery }) => {
     const [canClaim, setCanClaim] = useState(false);
     const [openTicketUsers, setOpenTicketUsers] = useState(false);
     const wallet = useAnchorWallet();
-    // console.log(lottery);
+    console.log(lottery);
 
     const {
         connected,
@@ -41,6 +41,16 @@ const PotCard = ({ lottery }) => {
     useEffect(() => {
         if (!lottery) return;
         getWinner();
+
+        setCanClaim(
+            ticketWinner &&
+                lottery?.account?.winnerId &&
+                wallet.publicKey.equals(ticketWinner.authority) &&
+                !lottery.account.claimed
+        );
+    }, [lottery, lottery?.account.winnerId]);
+
+    useEffect(() => {
         if (tickets) {
             setTicketList(
                 tickets.filter(
@@ -48,13 +58,7 @@ const PotCard = ({ lottery }) => {
                 )
             );
         }
-        const canClaim =
-            ticketWinner &&
-            lottery &&
-            wallet.publicKey.equals(ticketWinner.authority) &&
-            !lottery.account.claimed;
-        setCanClaim(canClaim);
-    }, [lottery]);
+    }, [tickets]);
 
     return (
         <>
@@ -73,7 +77,7 @@ const PotCard = ({ lottery }) => {
                                 </div>
                             </div>
                             <div className={style.rows}>
-                                {ticketList.map((ticket, index) => (
+                                {ticketList?.map((ticket, index) => (
                                     <div
                                         className={style.ticket_list__item}
                                         key={index}
