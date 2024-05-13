@@ -1,55 +1,13 @@
-@property --gradient-angle {
-    syntax: "<angle>";
-    initial-value: 0deg;
-    inherits: false;
-}
-
-/* :root {
-    --clr-1: #052b2f;
-    --clr-2: #073438;
-    --clr-3: #0e4b50;
-    --clr-4: #2d8f85;
-    --clr-5: #637c54;
-} */
-
 .wrapper {
     background-color: #242833;
-    background-color: white;
-    min-height: 200px;
-    width: 22%;
     margin: 0 auto;
     border-radius: 2rem;
-    /* box-shadow: 4px 4px 4px 1px rgba(0, 0, 0, 0.75); */
+    box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
     display: flex;
-    /* padding: 20px; */
+    padding: 20px;
     flex-direction: column;
     margin-top: 40px;
     border: 2px solid #512da8;
-    position: relative;
-    z-index: 1;
-}
-
-.wrapper::before,
-.wrapper::after {
-    content: "";
-    position: absolute;
-    inset: -0.5rem;
-    z-index: -1;
-    background: conic-gradient(#052b2f, #073438, #0e4b50, #2d8f85, #637c54);
-    animation: rotation 20s linear infinite;
-}
-
-.wrapper::after {
-    filter: blur(3.5rem);
-}
-
-@keyframes rotation {
-    0% {
-        --gradient-angle: rotate(0);
-    }
-    100% {
-        --gradient-angle: rotate(360deg);
-    }
 }
 
 .title {
@@ -82,15 +40,15 @@
     justify-content: center;
     place-self: center;
     color: #fff;
-    padding: 15px 32px;
+    padding: 12px 24px;
     text-align: center;
     text-decoration: none;
     margin-top: 20px;
     cursor: pointer;
-    border-radius: 10px;
+    border-radius: 8px;
     font-weight: bolder;
-    font-size: 1.5rem;
-    /* border: 1px solid #512da8; */
+    font-size: 1.2rem;
+    box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
 }
 
 .btn:hover {
@@ -132,4 +90,21 @@
     font-weight: bolder;
     cursor: pointer;
     color: #f2505e;
+}
+
+.ticket_list {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #242833;
+    padding: 20px;
+    border: 2px solid #fff;
+    box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+}
+
+.ticket_list__header {
+    font-size: 24px;
+    font-weight: 700;
+    color: #fff;
 }

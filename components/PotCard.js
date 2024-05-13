@@ -9,13 +9,21 @@ import { getTicketPrice, getTime, getTotalPrize } from "../utils/program";
 
 const PotCard = ({ lottery }) => {
     const [lotteryPot, setLotteryPot] = useState(0);
+    const [ticketList, setTicketList] = useState(0);
     const [ticketWinner, setTicketWinner] = useState(null);
     const [canClaim, setCanClaim] = useState(false);
+    const [openTicketUsers, setOpenTicketUsers] = useState(false);
     const wallet = useAnchorWallet();
     // console.log(lottery);
 
-    const { connected, buyTicket, pickWinner, claimPrize, getTicketWinner } =
-        useAppContext();
+    const {
+        connected,
+        buyTicket,
+        pickWinner,
+        claimPrize,
+        getTicketWinner,
+        tickets,
+    } = useAppContext();
 
     const isLotteryAuthority =
         wallet &&
@@ -25,16 +33,21 @@ const PotCard = ({ lottery }) => {
     const isFinished = lottery && lottery.account.winnerId;
 
     const getWinner = async () => {
-        const result = await getTicketWinner(lottery).then((winner) =>
+        await getTicketWinner(lottery).then((winner) =>
             setTicketWinner(winner)
         );
-        return result;
     };
 
     useEffect(() => {
         if (!lottery) return;
         getWinner();
-
+        if (tickets) {
+            setTicketList(
+                tickets.filter(
+                    (t) => t.account.lotteryId === lottery.account.id
+                )
+            );
+        }
         const canClaim =
             ticketWinner &&
             lottery &&
@@ -46,8 +59,37 @@ const PotCard = ({ lottery }) => {
     return (
         <>
             {lottery && (
-                <div className="wrapper">
+                <div className={style.wrapper}>
                     <Toaster />
+                    {openTicketUsers && (
+                        <div className={style.ticket_list}>
+                            <div className={style.ticket_list__header}>
+                                Ticket List # {lottery.account.id}
+                            </div>
+
+                            <div className={style.tableHeader}>
+                                <div>💳 Address</div>
+                                <div>💳 Ticket</div>
+                            </div>
+                            <div className={style.rows}>
+                                {ticketList.map((ticket, index) => (
+                                    <div
+                                        className={style.ticket_list_item}
+                                        key={index}
+                                    >
+                                        {shortenPk(ticket.account.authority, 5)}
+                                    </div>
+                                ))}
+                            </div>
+
+                            <button
+                                className={style.btn}
+                                onClick={() => setOpenTicketUsers(false)}
+                            >
+                                Close
+                            </button>
+                        </div>
+                    )}
                     <div className={style.title}>
                         Lottery{" "}
                         <span className={style.textAccent}>
@@ -69,11 +111,16 @@ const PotCard = ({ lottery }) => {
                         Pick Winner Time:{" "}
                         {getTime(lottery.account.pickWinnerTime)}
                     </div>
-                    <div className={style.recentWinnerTitle}>🏆Winner🏆</div>
+
                     {ticketWinner && (
-                        <div className={style.winner}>
-                            {shortenPk(ticketWinner.authority, 5)}
-                        </div>
+                        <>
+                            <div className={style.recentWinnerTitle}>
+                                🏆Winner🏆
+                            </div>
+                            <div className={style.winner}>
+                                {shortenPk(ticketWinner.authority, 5)}
+                            </div>
+                        </>
                     )}
                     {connected && (
                         <>
@@ -106,6 +153,13 @@ const PotCard = ({ lottery }) => {
                                     Claim prize
                                 </div>
                             )}
+
+                            <div
+                                className={style.btn}
+                                onClick={() => setOpenTicketUsers(true)}
+                            >
+                                Ticket list
+                            </div>
                         </>
                     )}
                 </div>

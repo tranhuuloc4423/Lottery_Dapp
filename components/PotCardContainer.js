@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import style from "../styles/PotCardContainer.module.css";
 import PotCard from "./PotCard";
 import { useAppContext } from "../context/context";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Toaster } from "react-hot-toast";
 import toast from "react-hot-toast";
+import Table from "./Table";
 
 const PotCardContainer = () => {
     const {
@@ -13,8 +14,10 @@ const PotCardContainer = () => {
         connected,
         initMaster,
         isMasterInitialized,
+        lotteryHistory,
     } = useAppContext();
-    const [openModal, setOpenModal] = useState(false);
+    const [openModalCreate, setOpenModalCreate] = useState(false);
+    const [openModalHistory, setOpenModalHistory] = useState(false);
     const [price, setPrice] = useState(0);
     const [endtime, setEndTime] = useState("");
     const [pickWinnerTime, setPickWinnerTime] = useState("");
@@ -48,7 +51,7 @@ const PotCardContainer = () => {
 
         console.log({ end_time, pick_time });
         createLottery(Number(price), end_time, pick_time);
-        setOpenModal(false);
+        setOpenModalCreate(false);
     };
 
     if (!isMasterInitialized)
@@ -70,7 +73,8 @@ const PotCardContainer = () => {
     return (
         <div>
             <Toaster />
-            {openModal && (
+
+            {openModalCreate && (
                 <div className={style.modal}>
                     <h2>Create Lottery</h2>
                     <div>
@@ -110,20 +114,39 @@ const PotCardContainer = () => {
                         </button>
                         <button
                             className={style.button}
-                            onClick={() => setOpenModal(false)}
+                            onClick={() => setOpenModalCreate(false)}
                         >
                             Exit
                         </button>
                     </div>
                 </div>
             )}
+            {openModalHistory && (
+                <div className={style.history_wrapper}>
+                    <div className={style.history_header}>Lottery History</div>
+                    <Table lotteryHistory={lotteryHistory} />
+                    <button
+                        className={style.button}
+                        onClick={() => setOpenModalHistory(false)}
+                    >
+                        Close
+                    </button>
+                </div>
+            )}
             {connected ? (
                 <div className={style.wrapper}>
                     <button
                         className={style.button}
-                        onClick={() => setOpenModal(true)}
+                        onClick={() => setOpenModalCreate(true)}
                     >
                         Create Lottery
+                    </button>
+
+                    <button
+                        className={style.button}
+                        onClick={() => setOpenModalHistory(true)}
+                    >
+                        Lottery History
                     </button>
                     <div className={style.container}>
                         {lotteries?.map((lottery) => (

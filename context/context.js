@@ -12,7 +12,7 @@ import {
     getTotalPrize,
 } from "../utils/program";
 
-import { confirmTx, mockWallet } from "../utils/helper";
+import { autoConfirmTx, confirmTx, mockWallet } from "../utils/helper";
 import toast from "react-hot-toast";
 
 export const AppContext = createContext();
@@ -21,10 +21,8 @@ export const AppProvider = ({ children }) => {
     const [masterAddress, setMasterAddress] = useState();
     const [initialized, setInitialized] = useState(false);
     const [lotteryId, setLotteryId] = useState();
-    // const [lottery, setLottery] = useState();
     const [lotteries, setLotteries] = useState();
-    // const [lotteryAddress, setLotteryAddress] = useState();
-    const [userWinnerId, setUserWinnerId] = useState(false);
+    const [tickets, setTickets] = useState();
     const [lotteryHistory, setLotteryHistory] = useState([]);
     // get provider
     const { connection } = useConnection();
@@ -38,6 +36,10 @@ export const AppProvider = ({ children }) => {
     useEffect(() => {
         updateState();
     }, [program]);
+
+    useEffect(() => {
+        getHistory();
+    }, [lotteryId]);
 
     const updateState = async () => {
         if (!program) return;
@@ -59,6 +61,9 @@ export const AppProvider = ({ children }) => {
             const lotteries = await program.account.lottery.all();
 
             setLotteries(lotteries);
+
+            const tickets = await program.account.ticket.all();
+            setTickets(tickets);
         } catch (error) {
             console.log(error.message);
         }
@@ -80,7 +85,7 @@ export const AppProvider = ({ children }) => {
                 })
                 .rpc();
             await confirmTx(txHash, connection);
-
+            console.log("txHash : ", txHash);
             updateState();
             toast.success("Success Init Master!");
         } catch (error) {
@@ -107,8 +112,23 @@ export const AppProvider = ({ children }) => {
                 })
                 .rpc();
             await confirmTx(txHash, connection);
+            console.log("txHash : ", txHash);
+
             updateState();
             toast.success("Lottery Created!");
+        } catch (error) {
+            console.log(error.message);
+            toast.error(error.message);
+        }
+    };
+
+    const getTickets = async (id) => {
+        try {
+            const tickets = await program.account.ticket.all();
+            const ticketsLottery = tickets.filter(
+                (t) => t.account.lotteryId === id
+            );
+            setTickets(ticketsLottery);
         } catch (error) {
             console.log(error.message);
             toast.error(error.message);
@@ -159,6 +179,8 @@ export const AppProvider = ({ children }) => {
                 })
                 .rpc();
             await confirmTx(txHash, connection);
+            console.log("txHash : ", txHash);
+
             updateState();
             toast.success("Bought a Ticket!");
         } catch (error) {
@@ -185,6 +207,7 @@ export const AppProvider = ({ children }) => {
                 })
                 .rpc();
             await confirmTx(txHash, connection);
+            console.log("txHash : ", txHash);
             updateState();
             toast.success("Claimed a Prize!");
         } catch (error) {
@@ -209,6 +232,8 @@ export const AppProvider = ({ children }) => {
                 })
                 .rpc();
             await confirmTx(txHash, connection);
+            console.log("txHash : ", txHash);
+
             updateState();
             toast.success("Pick a Winner!");
         } catch (error) {
@@ -252,18 +277,12 @@ export const AppProvider = ({ children }) => {
     return (
         <AppContext.Provider
             value={{
-                // Put functions/variables you want to bring out of context to App in here
                 connected: wallet?.publicKey ? true : false,
                 isMasterInitialized: initialized,
                 lotteryId,
-                // isLotteryAuthority:
-                //     wallet &&
-                //     lottery &&
-                //     wallet.publicKey.equals(lottery.authority),
-                // isFinished: lottery && lottery.winnerId,
-                // canClaim: lottery && !lottery.claimed && userWinnerId,
                 lotteryHistory,
                 lotteries,
+                tickets,
                 initMaster,
                 createLottery,
                 buyTicket,

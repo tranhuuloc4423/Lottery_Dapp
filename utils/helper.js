@@ -15,3 +15,7 @@ export const confirmTx = async (txHash, connection) => {
         signature: txHash,
     });
 };
+
+const sleep = (ms) => {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+};
