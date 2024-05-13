@@ -62,26 +62,32 @@ const PotCard = ({ lottery }) => {
                 <div className={style.wrapper}>
                     <Toaster />
                     {openTicketUsers && (
-                        <div className={style.ticket_list}>
+                        <div className={style.ticket_list__wrapper}>
                             <div className={style.ticket_list__header}>
                                 Ticket List # {lottery.account.id}
                             </div>
-
                             <div className={style.tableHeader}>
-                                <div>💳 Address</div>
-                                <div>💳 Ticket</div>
+                                <div className={style.addressTitle}>💳 ID</div>
+                                <div className={style.addressTitle}>
+                                    💳 Address
+                                </div>
                             </div>
                             <div className={style.rows}>
                                 {ticketList.map((ticket, index) => (
                                     <div
-                                        className={style.ticket_list_item}
+                                        className={style.ticket_list__item}
                                         key={index}
                                     >
-                                        {shortenPk(ticket.account.authority, 5)}
+                                        <div>#{ticket?.account.id}</div>
+                                        <div>
+                                            {shortenPk(
+                                                ticket?.account.authority,
+                                                10
+                                            )}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
-
                             <button
                                 className={style.btn}
                                 onClick={() => setOpenTicketUsers(false)}
